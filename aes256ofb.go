@@ -29,6 +29,10 @@ type (
 	}
 )
 
+var (
+	ErrNoFiles = errors.New("no files")
+)
+
 func NewAESKey() AESKey {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -98,6 +102,7 @@ func (c *Client) FromDirectory(targetDir string) error {
 	}
 	gzipW := zlib.NewWriter(cipherW)
 	tarW := tar.NewWriter(gzipW)
+	noFiles := true
 	if err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -120,6 +125,7 @@ func (c *Client) FromDirectory(targetDir string) error {
 		if err := tarW.WriteHeader(header); err != nil {
 			return err
 		}
+		noFiles = false
 		if info.IsDir() {
 			if c.Logger != nil {
 				c.Logger(true, true, header.Name, 0)
@@ -149,6 +155,9 @@ func (c *Client) FromDirectory(targetDir string) error {
 	}
 	if err := cipherW.Close(); err != nil {
 		return err
+	}
+	if noFiles {
+		return ErrNoFiles
 	}
 	return nil
 }

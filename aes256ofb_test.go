@@ -64,3 +64,18 @@ func TestEncryptAndDecrypt(t *testing.T) {
 		t.Error("file not match")
 	}
 }
+
+func TestEmpty(t *testing.T) {
+	c := Client{
+		AESKey: NewAESKey(),
+		IV:     NewIV(),
+		FileFilter: func(name string) bool {
+			return name == "NoSuchFile"
+		},
+	}
+	var encrypted bytes.Buffer
+	err := c.Encrypt(&encrypted).FromDirectory("./")
+	if err != ErrNoFiles {
+		t.Error("should be ErrNoFiles")
+	}
+}
