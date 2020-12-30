@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -77,5 +78,17 @@ func TestEmpty(t *testing.T) {
 	err := c.Encrypt(&encrypted).FromDirectory("./")
 	if err != ErrNoFiles {
 		t.Error("should be ErrNoFiles")
+	}
+}
+
+func TestBadCompressionLevel(t *testing.T) {
+	c := Client{
+		AESKey: NewAESKey(),
+		IV:     NewIV(),
+	}
+	var encrypted bytes.Buffer
+	err := c.Encrypt(&encrypted).WithCompressionLevel(100).FromDirectory("./")
+	if err == nil || !strings.Contains(err.Error(), "invalid compression level") {
+		t.Error("should be invalid compression level error")
 	}
 }

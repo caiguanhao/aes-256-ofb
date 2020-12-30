@@ -35,6 +35,7 @@ var (
 	ErrNoFiles = errors.New("no files")
 )
 
+// generate random AES key
 func NewAESKey() AESKey {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -43,6 +44,7 @@ func NewAESKey() AESKey {
 	return b
 }
 
+// AES key to Go code
 func (key AESKey) String() string {
 	out := `var AES_KEY = strings.Join([]string{`
 	for i, b := range key {
@@ -58,6 +60,7 @@ func (key AESKey) String() string {
 	return out
 }
 
+// generate random IV
 func NewIV() []byte {
 	b := make([]byte, aes.BlockSize)
 	if _, err := rand.Read(b); err != nil {
@@ -66,6 +69,7 @@ func NewIV() []byte {
 	return b
 }
 
+// default logger for encryption and decryption
 func DefaultLogger(compress, dir bool, name string, size int64) {
 	if compress {
 		if dir {
@@ -82,16 +86,19 @@ func DefaultLogger(compress, dir bool, name string, size int64) {
 	}
 }
 
+// set writer for encryption
 func (c *Client) Encrypt(target io.Writer) *Client {
 	c.writer = target
 	return c
 }
 
+// set compression level
 func (c *Client) WithCompressionLevel(compressionLevel int) *Client {
 	c.zlibWriterLevel = &compressionLevel
 	return c
 }
 
+// start encryption for directory
 func (c *Client) FromDirectory(targetDir string) error {
 	if c.writer == nil {
 		return errors.New("no target")
@@ -176,11 +183,13 @@ func (c *Client) FromDirectory(targetDir string) error {
 	return nil
 }
 
+// set reader for decryption
 func (c *Client) Decrypt(source io.Reader) *Client {
 	c.reader = source
 	return c
 }
 
+// print openssl decryption command
 func (c *Client) OpensslDecryptCommand() []string {
 	iv := hex.EncodeToString(c.IV)
 	if iv == "" {
@@ -189,6 +198,7 @@ func (c *Client) OpensslDecryptCommand() []string {
 	return []string{"openssl", "enc", "-d", "-aes-256-ofb", "-iv", iv, "-K", hex.EncodeToString(c.AESKey)}
 }
 
+// start decryption to directory
 func (c *Client) ToDirectory(targetDir string) error {
 	if c.reader == nil {
 		return errors.New("no source")
