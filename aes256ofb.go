@@ -26,6 +26,8 @@ type (
 
 		writer io.Writer
 		reader io.Reader
+
+		zlibWriterLevel *int
 	}
 )
 
@@ -85,6 +87,11 @@ func (c *Client) Encrypt(target io.Writer) *Client {
 	return c
 }
 
+func (c *Client) WithCompressionLevel(compressionLevel int) *Client {
+	c.zlibWriterLevel = &compressionLevel
+	return c
+}
+
 func (c *Client) FromDirectory(targetDir string) error {
 	if c.writer == nil {
 		return errors.New("no target")
@@ -100,7 +107,14 @@ func (c *Client) FromDirectory(targetDir string) error {
 		S: cipher.NewOFB(block, c.IV),
 		W: c.writer,
 	}
-	gzipW := zlib.NewWriter(cipherW)
+	lvl := zlib.DefaultCompression
+	if c.zlibWriterLevel != nil {
+		lvl = *c.zlibWriterLevel
+	}
+	gzipW, err := zlib.NewWriterLevel(cipherW, lvl)
+	if err != nil {
+		return err
+	}
 	tarW := tar.NewWriter(gzipW)
 	noFiles := true
 	if err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
